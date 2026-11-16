@@ -42,6 +42,8 @@ input[type=number]{width:110px}
 
 <div class="card">
   <button class="pri" id="start" onclick="startApp()">تفعيل الأذان والإشعارات</button>
+  <button id="pushb" onclick="subPush()" style="width:100%;margin-top:10px">🔔 تفعيل إشعارات الخلفية (والكروم مقفول)</button>
+  <textarea id="sub" readonly onclick="this.select()" style="display:none;width:100%;height:90px;margin-top:10px;box-sizing:border-box;font-size:11px"></textarea>
   <p class="mu" id="stat">اضغط الزر مرة واحدة عشان المتصفح يسمح بالصوت والإشعارات، وسيب الصفحة مفتوحة.</p>
 </div>
 
@@ -142,6 +144,15 @@ async function startApp(){
  try{window._wl=await navigator.wakeLock.request('screen')}catch(e){}
  S.on=1;save();status();
 }
+const VAPID='BKp2fXtFkehbk4WSbOgerVWgHnacnWHTS5xEE99tMKwahNwf4O2FsRglf4Plj9WD-upakQiebVDy_J6cW0kZq3s';
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+async function subPush(){try{
+ if(await Notification.requestPermission()!=='granted')return banner('لازم تسمح بالإشعارات');
+ const r=await navigator.serviceWorker.ready;let s=await r.pushManager.getSubscription();
+ if(!s){const u=VAPID.replace(/-/g,'+').replace(/_/g,'/'),a=atob(u+'='.repeat((4-u.length%4)%4));
+  s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(a,c=>c.charCodeAt(0))})}
+ const t=$('#sub');t.style.display='block';t.value=JSON.stringify(s);t.select();banner('انسخ الكود ده وحطه في GitHub Secret اسمه PUSH_SUB')
+}catch(e){banner('فشل التفعيل: '+e.message)}}
 function status(){const ok=window.Notification&&Notification.permission==='granted';
  $('#stat').textContent=S.on?('شغال ✅ '+(ok?'الإشعارات مفعّلة':'الإشعارات غير متاحة على الجهاز ده، هتظهر تنبيهات داخل الصفحة مع الصوت')+' — سيب الصفحة مفتوحة'):'اضغط الزر مرة واحدة عشان المتصفح يسمح بالصوت والإشعارات، وسيب الصفحة مفتوحة.'}
 function geo(){navigator.geolocation.getCurrentPosition(p=>{S.lat=+p.coords.latitude.toFixed(3);S.lng=+p.coords.longitude.toFixed(3);save();fill();render()},()=>banner('تعذّر تحديد الموقع، اكتب الإحداثيات يدويًا'))}
